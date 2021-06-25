@@ -1,93 +1,45 @@
-const Warn = require('../schema/warnSchema')
-const Ban = require('../schema/banSchema')
-const { MessageEmbed } = require('discord.js')
-
+const Discord = require('discord.js');
+const disbut = require('discord-buttons');
+const Discord = require('discord.js');
 module.exports = {
-    name: 'warn',
-    permissions: ['KICK_MEMBERS'],
-    permissionsMessage: 'You need to have KICK MEMBERS to run this command.',
-    run: async({ message, args, handler, client }) => {
-        let member = message.guild.members.cache.get(args[0]) || message.mentions.members?.first()
-        if(!member) return message.channel.send('You have to provide an user.')
+    name: "nuke",
+    category: "fun",
+    aliases: ["8b"],
+    cooldown: 4,
+    description: "8ball command",
+    run: async (client, message, apikey, args, cmduser, text, prefix) => {
 
-        if(member.roles.highest.position >= message.member.roles.highest.position) return message.channel.send('You cannot warn this user.')
-        if(member.id == message.author.id) return message.channel.send('You cannot warn yourself.')
 
-        let id = await generateId()
-        let reason = [...args].splice(1).join(' ') || 'Breaking rules'
-        let warns = await getWarns(member.id, message.guild.id) + 1
+if(!message.member.hasPermission('MANAGE_CHANNELS')) return message.channel.send(`You don't have enough permission to use this command!`)
 
-        let warning = {
-            admin: message.author.id,
-            user: member.id,
-            guild: message.guild.id,
-			reason: reason,
-			date: Date.now(),
-            id: id
-        }
-        message.channel.send(new MessageEmbed()
-        .setDescription(`${member.user.username} has been warned!`)
-        .addField('**Warn ID**',id )
-        .addField('**Action made by**', message.author) 
-        .addField('**Reason**', reason)
-        .setColor('BLUE')
-    )
-    member?.user.send(new MessageEmbed()
-    .setTitle('You have been warned!')
-    .addField('**Guild**', message.guild.name)
-    .addField('**Reason**', reason)
-    .addField('**Moderator**', message.author)
-    .addField('**Punishment ID**', id)
-    .setFooter('You can use the punishment ID for appeals.')
-    .setColor('BLUE')
-)
+let b1 = new disbut.MessageButton()
+.setStyle('green')
+.setLabel('CONFIRM')
+.setID('1')
 
-        await Warn.findOneAndUpdate({ user: member.id, guild: message.guild.id }, {
-			user: member.id,
-			guild: message.guild.id,
-			$push: { warns: warning }
-		}, { upsert: true, setDefaultsOnInsert: true })
+let b2 = new disbut.MessageButton()
+.setStyle('red')
+.setLabel('CANCEL')
+.setID('2')
 
-        let channel = message.guild.channels.cache.get(client.modlogs)
-        channel.send(new MessageEmbed()
-            .setTitle('New warn!')
-            .addField('Admin', `<@${message.author.id}>`)
-            .addField('User', `<@${member.id}>`)
-            .addField('Reason', reason)
-            .addField('Punishment id', id)
-            .setColor('BLUE')
-            .setTimestamp()
-        )
-    }
-}
+const m = await message.channel.send(`This channel will be nuked\n Are you sure?`, { buttons: [b1, b2] })
 
-async function getWarns(user, guild){
-    let results = await Warn.findOne({ user, guild })
-    return results ? results.warns.length : 0
-}
+bot.on('clickButton' , async(b) => {
+    if (b.clicker.member.id !== message.author.id) return;
 
-async function generateId(){
-    let IDs = []
+            if (b.id === '1') {
 
-    let warns = await Warn.find({})
-    let bans = await Ban.find({})
+             await b.defer()
+message.channel.clone().then((ch) => {
+    ch.setParent(message.channel.parent.id);
+    ch.setPosition(message.channel.position);
+    message.channel.delete();
 
-    for(let warn of warns){
-        IDs.push(warn.id)
-    }
-
-    for(let ban of bans){
-      IDs.push(ban.id)  
-    }
-
-    let toReturn = 0
-    for(let i = 0; i < 5; i++){
-        toReturn = `${toReturn}${Math.floor(Math.random() * (9 - 0)) + 0}`
-    }
-    
-    while(IDs.includes(toReturn)){
-        generateId()
-    }
-
-    return toReturn
-}
+ch.send(`**\`${message.author.tag}\`** Nuked this channel.`);
+});
+            } else if(b.id === '2') {
+                m.edit(`${message.author} has cancelled the command!`).then(msg => msg.delete({ timeout: 2000}))
+                message.delete();
+            }
+})
+} } 

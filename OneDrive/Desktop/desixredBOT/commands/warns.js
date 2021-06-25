@@ -1,26 +1,65 @@
-const Warn = require('../schema/warnSchema')
-const { MessageEmbed } = require('discord.js')
+const Discord = require("discord.js");
+const config = require("../../botconfig/config.json");
+const ee = require("../../botconfig/embed.json");
+const { MessageEmbed } = require("discord.js");
+const { prompt } = require("nekoyasui"); //npm install nekoyasui@latest
 
 module.exports = {
-    name: 'warns', //
-    run: async({ message, args, handler }) => {
-        if(!message.member.hasPermission('KICK_MEMBERS')) return message.channel.send(new MessageEmbed()
-            .setAuthor(message.author.tag, message.author.displayAvatarURL())
-            .setDescription('You dont have permissions to execute this command.')
-            .setColor('RED')
-            .setTimestamp()
-        )
+    name: "codehelp",
+    category: "course",
+    aliases: ["helpcode"],
+    cooldown: 4,
+    description: "Helps with coding",
+    run: async (client, message, args, cmduser, text, prefix) => {
 
-        let member = message.guild.members.cache.get(args[0]) || message.mentions.members?.first()
-        if(!member) return message.channel.send('You have to provide an user.')
-        
-        let warns = await getWarns(member.id, message.guild.id)
-        message.channel.send(`\`${member.user.username}\` has \`${warns}\` warns.`)
-    }
-}
 
-async function getWarns(user, guild){
-    let results = await Warn.findOne({ user, guild })
-    return results ? results.warns.length : 0
+const ask = {
+  title: "OKay, first of all, what do you want to be the embed's title? Type the title into the chat now!",
+  desc: "Type the description that you want in the embed!",
+  color: "Type the color you want to be on the embed! It can be a color like red or a hex code.",
+  footer: "What do you want its footer to be?",
+  note: "To cancel the command type: `cancel` | To skip the question type: `skip`"
+};
+
+var answer = {};
+answer.cancel = "ok! cancelling the embed..";
+answer.skip = "skipping the question, proceed to the next question.";
+
+answer.title = await prompt.reply(message.channel, ask.title + "\n" + ask.note, { userID: message.author.id });
+if (answer.title === "skip") {
+  const skip = await message.channel.send(answer.skip);
+  setTimeout(async () => { await skip.delete(); }, 9e3);
 }
-//test it out k
+if (!answer.title || answer.title === "cancel") return message.channel.send(answer.cancel);
+
+answer.desc = await prompt.reply(message.channel, ask.desc + "\n" + ask.note, { userID: message.author.id });
+if (answer.desc === "skip") {
+  const skip = await message.channel.send(answer.skip);
+  setTimeout(async () => { await skip.delete(); }, 9e3);
+}
+if (!answer.desc || answer.desc === "cancel") return message.channel.send(answer.cancel);
+
+answer.color = await prompt.reply(message.channel, ask.color + "\n" + ask.note, { userID: message.author.id });
+if (answer.color === "skip") {
+  const skip = await message.channel.send(answer.skip);
+  setTimeout(async () => { await skip.delete(); }, 9e3);
+}
+if (!answer.color || answer.color === "cancel") return message.channel.send(answer.cancel);
+
+answer.footer = await prompt.reply(message.channel, ask.footer + "\n" + ask.note, { userID: message.author.id });
+if (answer.footer === "skip") {
+  const skip = await message.channel.send(answer.skip);
+  setTimeout(async () => { await skip.delete(); }, 9e3);
+}
+if (!answer.footer || answer.footer === "cancel") return message.channel.send(answer.cancel);
+
+const embed = new MessageEmbed();
+if (answer.title !== "skip") embed.setTitle(answer.title);
+if (answer.desc !== "skip") embed.setDescription(answer.desc);
+if (answer.color !== "skip") embed.setColor(answer.color);
+if (answer.footer !== "skip") embed.setFooter(answer.footer);
+
+return message.channel.send("", { embed : embed })
+
+}
+}
